@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: csv-to-parquet
+spec:
+  containers:
+  - name: csv-to-parquet
+    image: your-docker-registry/csv-to-parquet:latest
+    env:
+    - name: SOURCE_PATH
+      value: "s3://my-bucket/path/to/data.csv"
