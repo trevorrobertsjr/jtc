@@ -110,6 +110,20 @@ resource "google_compute_instance" "gce_instance" {
 
     # Add the default user to the Docker group
     usermod -aG docker ubuntu
+
+    # Install kubectl
+    curl -fsSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x /usr/local/bin/kubectl
+
+    # Install Minikube
+    curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    chmod +x minikube
+    mv minikube /usr/local/bin/
+
+    # Verify installations
+    docker --version
+    kubectl version --client
+    minikube version
   EOT
 
   service_account {
@@ -174,6 +188,20 @@ resource "aws_instance" "ec2_instance" {
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
     unzip awscliv2.zip
     ./aws/install
+
+    # Install kubectl
+    curl -fsSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x /usr/local/bin/kubectl
+
+    # Install Minikube
+    curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    chmod +x minikube
+    mv minikube /usr/local/bin/
+
+    # Verify installations
+    docker --version
+    kubectl version --client
+    minikube version
   EOT
 
   tags = {
