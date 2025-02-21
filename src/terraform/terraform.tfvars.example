@@ -1,0 +1,4 @@
+# run this command at the CLI: gcloud config get-value project
+gcp_project = ""
+aws_ami = "ami-0b764103c341230da"
+gce_image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
