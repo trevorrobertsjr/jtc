@@ -5,11 +5,15 @@ from urllib.parse import urlparse
 import boto3
 from google.cloud import storage
 from io import BytesIO
+from dotenv import load_dotenv
+import json
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 # Get the input path from environment variable
 SOURCE_PATH = os.getenv("SOURCE_PATH")
@@ -52,23 +56,35 @@ def read_from_gcs(bucket_name, object_key):
         logger.error(f"Failed to read from GCS: {e}")
         raise
 
-def write_to_s3(bucket_name, output_key, df):
+def write_parquet_to_s3(bucket_name, output_key, df):
     """Writes a DataFrame to S3 in Parquet format."""
-    logger.info(f"Writing data to S3: s3://{bucket_name}/{output_key}")
+    logger.info(f"Writing Parquet data to S3: s3://{bucket_name}/{output_key}")
     try:
         buffer = BytesIO()
         df.to_parquet(buffer, engine="pyarrow", index=False)
         buffer.seek(0)
         s3_client = boto3.client("s3")
         s3_client.put_object(Bucket=bucket_name, Key=output_key, Body=buffer.getvalue())
-        logger.info(f"Successfully wrote data to S3.")
+        logger.info(f"Successfully wrote Parquet file to S3.")
     except Exception as e:
-        logger.error(f"Failed to write to S3: {e}")
+        logger.error(f"Failed to write Parquet to S3: {e}")
         raise
 
-def write_to_gcs(bucket_name, output_key, df):
+def write_json_to_s3(bucket_name, output_key, df):
+    """Writes a DataFrame to S3 in JSON format."""
+    logger.info(f"Writing JSON data to S3: s3://{bucket_name}/{output_key}")
+    try:
+        json_data = df.to_json(orient="records", indent=4)
+        s3_client = boto3.client("s3")
+        s3_client.put_object(Bucket=bucket_name, Key=output_key, Body=json_data.encode("utf-8"))
+        logger.info(f"Successfully wrote JSON file to S3.")
+    except Exception as e:
+        logger.error(f"Failed to write JSON to S3: {e}")
+        raise
+
+def write_parquet_to_gcs(bucket_name, output_key, df):
     """Writes a DataFrame to GCS in Parquet format."""
-    logger.info(f"Writing data to GCS: gs://{bucket_name}/{output_key}")
+    logger.info(f"Writing Parquet data to GCS: gs://{bucket_name}/{output_key}")
     try:
         client = storage.Client()
         bucket = client.bucket(bucket_name)
@@ -77,32 +93,53 @@ def write_to_gcs(bucket_name, output_key, df):
         df.to_parquet(buffer, engine="pyarrow", index=False)
         buffer.seek(0)
         blob.upload_from_file(buffer, content_type="application/octet-stream")
-        logger.info(f"Successfully wrote data to GCS.")
+        logger.info(f"Successfully wrote Parquet file to GCS.")
     except Exception as e:
-        logger.error(f"Failed to write to GCS: {e}")
+        logger.error(f"Failed to write Parquet to GCS: {e}")
+        raise
+
+def write_json_to_gcs(bucket_name, output_key, df):
+    """Writes a DataFrame to GCS in JSON format."""
+    logger.info(f"Writing JSON data to GCS: gs://{bucket_name}/{output_key}")
+    try:
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(output_key)
+        json_data = df.to_json(orient="records", indent=4)
+        blob.upload_from_string(json_data, content_type="application/json")
+        logger.info(f"Successfully wrote JSON file to GCS.")
+    except Exception as e:
+        logger.error(f"Failed to write JSON to GCS: {e}")
         raise
 
 def process_data():
-    """Determines the source, reads the CSV, and writes as a Parquet file."""
+    """Determines the source, reads the CSV, and writes both Parquet and JSON files."""
     parsed_url = urlparse(SOURCE_PATH)
     bucket_name = parsed_url.netloc
     object_key = parsed_url.path.lstrip("/")
 
-    # Define output key with 'cleaned/' prefix
-    output_key = f"cleaned/{object_key.rsplit('/', 1)[-1].replace('.csv', '.parquet')}"
+    # Define output keys for both Parquet and JSON formats
+    parquet_output_key = f"cleaned/{object_key.rsplit('/', 1)[-1].replace('.csv', '.parquet')}"
+    json_output_key = f"cleaned/{object_key.rsplit('/', 1)[-1].replace('.csv', '.json')}"
 
     try:
         if is_s3_url(SOURCE_PATH):
             logger.info(f"Detected S3 source: {SOURCE_PATH}")
             df = read_from_s3(bucket_name, object_key)
-            write_to_s3(bucket_name, output_key, df)
-            logger.info(f"Pipeline completed successfully. Parquet file saved at s3://{bucket_name}/{output_key}")
+            logger.info(f"Dropping the country column.")
+            df = df.drop('country', axis=1)
+            write_parquet_to_s3(bucket_name, parquet_output_key, df)
+            write_json_to_s3(bucket_name, json_output_key, df)
+            logger.info(f"Pipeline completed successfully. Files saved to S3.")
 
         elif is_gcs_url(SOURCE_PATH):
             logger.info(f"Detected GCS source: {SOURCE_PATH}")
             df = read_from_gcs(bucket_name, object_key)
-            write_to_gcs(bucket_name, output_key, df)
-            logger.info(f"Pipeline completed successfully. Parquet file saved at gs://{bucket_name}/{output_key}")
+            logger.info(f"Dropping the country column.")
+            df = df.drop('country', axis=1)
+            write_parquet_to_gcs(bucket_name, parquet_output_key, df)
+            write_json_to_gcs(bucket_name, json_output_key, df)
+            logger.info(f"Pipeline completed successfully. Files saved to GCS.")
 
         else:
             logger.error("Invalid source path. Must start with 's3://' or 'gs://'.")

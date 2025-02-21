@@ -1,0 +1,72 @@
+[
+    {
+        "userid":"a28fe9f6-e116-4530-bac4-43e6013f289a",
+        "city":"New York",
+        "state":"NY",
+        "comment":"Despite its iconic landmarks, New York City's overcrowded streets and high cost of living can be off-putting to visitors.",
+        "rating":2
+    },
+    {
+        "userid":"23f8cd50-51fb-4935-a23c-07c4e843d1dc",
+        "city":"Chicago",
+        "state":"IL",
+        "comment":"New York City was an exhilarating experience full of vibrant culture, iconic landmarks, and impressive culinary delights that exceeded all expectations. The city's incredible energy, diversity, and endless entertainment options make every visit unforgettable.",
+        "rating":4
+    },
+    {
+        "userid":"76624f5d-4b47-49b8-b922-7fc787f6da35",
+        "city":"Philadelphia",
+        "state":"PA",
+        "comment":"New York City is an overcrowded, overpriced cesspool, teeming with rude inhabitants and suffocating pollution that makes it impossible to enjoy any of the over-hyped tourist attractions. The constant noise, filth, and sheer chaos of the city are a nightmare that leaves you yearning for the peacefulness of any other place.",
+        "rating":1
+    },
+    {
+        "userid":"e390ddf8-d547-4b84-aa86-598996064355",
+        "city":"Orlando",
+        "state":"FL",
+        "comment":"While New York City boasts impressive landmarks and a vibrant nightlife, the overwhelming crowds, noise pollution, and high cost of living can make the experience less than enjoyable.",
+        "rating":2
+    },
+    {
+        "userid":"a16e5e70-782a-40be-b797-9afe5a3a17e7",
+        "city":"Dallas",
+        "state":"TX",
+        "comment":"New York City is an incredibly vibrant and energetic city, full of world-class museums, diverse cuisine, and iconic landmarks that create an unforgettable experience. The city's multicultural atmosphere and fast-paced lifestyle truly make it \"the city that never sleeps\".",
+        "rating":4
+    },
+    {
+        "userid":"02954673-b511-47d2-8082-8a404b648f45",
+        "city":"Des Moines",
+        "state":"IA",
+        "comment":"While New York City's vibrant energy and iconic landmarks are impressive, the overwhelming crowds and high living costs can make the visit less enjoyable.",
+        "rating":2
+    },
+    {
+        "userid":"b750dc8c-6cdb-4eca-a8be-68e36a56beaf",
+        "city":"Birmingham",
+        "state":"AL",
+        "comment":"While New York City boasts a vibrant culture and iconic landmarks, the overwhelming crowds and constant noise can be quite exhausting. Additionally, the cost of living and tourist activities is noticeably higher compared to other cities.",
+        "rating":2
+    },
+    {
+        "userid":"87ed4830-071c-4865-b1ec-9cd80b75b95c",
+        "city":"Boston",
+        "state":"MA",
+        "comment":"The constant noise, relentless crowds, and exorbitant prices make New York City a stress-inducing nightmare rather than an enjoyable vacation destination. Its grimy streets, rude inhabitants, and overall chaotic environment left me feeling drained and desperate for peace.",
+        "rating":1
+    },
+    {
+        "userid":"007398c7-c71e-400e-af00-9910f759ab8d",
+        "city":"Boise",
+        "state":"ID",
+        "comment":"New York City is an electrifying hub of culture, diversity and unparalleled energy, boasting world-class restaurants, awe-inspiring skyscrapers, and iconic landmarks that make it an unforgettable, must-visit destination. The city's vibrant energy, coupled with its rich history and welcoming locals, provides an extraordinary experience that leaves you itching for more.",
+        "rating":5
+    },
+    {
+        "userid":"cef6eb3d-409b-4cfe-930f-97136db3816d",
+        "city":"Boise",
+        "state":"ID",
+        "comment":"The crowds in New York City were suffocating, the noise unbearable, and the prices ridiculously high for everything, making my visit a stressful, expensive nightmare.",
+        "rating":1
+    }
+]
