@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gcs-data-processor
+spec:
+  containers:
+  - name: gcs-processor
+    image: trevorrobertsjr/pipeline
+    env:
+    - name: GOOGLE_APPLICATION_CREDENTIALS_JSON
+      valueFrom:
+        secretKeyRef:
+          name: gcs-secret
+          key: key.json
+    - name: SOURCE_PATH
+      value: "gs://your-bucket-name/path/to/data.csv"  # Replace with actual GCS path
+  restartPolicy: Never

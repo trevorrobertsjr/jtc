@@ -80,18 +80,22 @@ resource "google_compute_instance" "gce_instance" {
     apt-get update
     apt-get install -y ca-certificates curl gnupg
 
+    # Ensure the keyrings directory exists
+    install -m 0755 -d /etc/apt/keyrings
+
     # Add the Google Cloud SDK repository
     echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 
     # Import the Google Cloud public key
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+    # curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+
+    # Download Google Cloud SDK’s GPG key and move it to the correct location
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg -o /etc/apt/keyrings/cloud.google.gpg
+    chmod a+r /etc/apt/keyrings/cloud.google.gpg
 
     # Update and install the Google Cloud SDK (`gcloud` CLI)
     apt-get update && apt-get install -y google-cloud-sdk
-
-    # Ensure the keyrings directory exists
-    install -m 0755 -d /etc/apt/keyrings
 
     # Download Docker's GPG key
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -297,6 +301,27 @@ resource "local_file" "aws_private_key" {
   filename = "${path.module}/aws-ssh-key.pem"
 }
 
+resource "google_service_account" "gcs_sa" {
+  account_id   = "gcs-storage-sa"
+  display_name = "GCS Storage Service Account"
+}
+
+resource "google_project_iam_member" "gcs_admin_role" {
+  project = var.gcp_project
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.gcs_sa.email}"
+}
+
+resource "google_service_account_key" "gcs_sa_key" {
+  service_account_id = google_service_account.gcs_sa.name
+  private_key_type   = "TYPE_GOOGLE_CREDENTIALS_FILE"
+}
+
+resource "local_file" "gcs_service_account_json" {
+  content  = google_service_account_key.gcs_sa_key.private_key
+  filename = "${path.module}/gcs-key.json"
+}
+
 output "gcs_bucket_name" {
   value = google_storage_bucket.gcs_bucket.name
 }
@@ -311,4 +336,9 @@ output "gce_instance_public_ip" {
 
 output "ec2_instance_public_ip" {
   value = aws_instance.ec2_instance.public_ip
+}
+
+output "gcs_service_account_key_file" {
+  value     = local_file.gcs_service_account_json.filename
+  sensitive = false
 }
