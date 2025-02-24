@@ -4,6 +4,12 @@ sidebar_position: 2
 
 # Setting up our Public Cloud on Amazon S3
 
+:::info
+
+I designed this workshop to run properly in the AWS us-east-1 and GCP us-central1 regions. You are free to choose a different region, but you may need to do some alterations to my documented steps to complete the labs.
+
+:::
+
 Let us create an Amazon S3 bucket and put our data file there.
 
 First, let's get our data file that we will use for the workshop: <a href="/files/nyc_reviews.csv" download>Download NYC Reviews CSV</a>
