@@ -7,14 +7,17 @@ sidebar_position: 2
 ## What is Kubernetes?
 An open-source container orchestration platform that automates deployment, scaling, and management of containerized applications across a cluster of nodes (i.e. servers). It provides features like self-healing, service discovery, load balancing, and automated rollouts/rollbacks.
 
+You may sometimes see Kubernetes abbreviated as "K8s" due to the 8 letters (ubernete) between "K" and "s" in the name. Folks in the Kubernetes community will pronounce that as "Kates" or "K-eights"
+
 ![Architecture Diagram](/img/components-of-kubernetes.svg)
 
 There are many important concepts of Kubernetes, but we will focus on just a few to get us started:
-Control Plane - the portion of Kubernetes components that are responsible for accepting user requests and making sure the worker nodes execute them.
-Data Plane - the nodes that are part of the Kubernetes cluster that run the containers that the user requests to be run.
-kubelet - a process that runs on every node in a Kubernetes cluster. It is responsible for executing the containers and making sure they stay running. The kubelet regularly polls the control plane to determine which containers should be running. If a container dies unexpectedly, the kubelet restarts that container at the next polling interval.
-pod - a grouping of one or more related containers than run on a single node. I say "one or more" because you may have an application container along with a logging container that need to run together for the logs to be properly propagated. The operations team may choose to run both of these containers together in a Kubernetes pod definition.
-kubectl - the CLI utility for developers to interact with the Kubernetes API.
+**Control Plane** - the portion of Kubernetes components that are responsible for accepting user requests and making sure the worker nodes execute them.
+**Data Plane** - the nodes that are part of the Kubernetes cluster that run the containers that the user requests to be run.
+**kubelet** - a process that runs on every node in a Kubernetes cluster. It is responsible for executing the containers and making sure they stay running. The kubelet regularly polls the control plane to determine which containers should be running. If a container dies unexpectedly, the kubelet restarts that container at the next polling interval.
+**kube-proxy** - a process that runs on every node in a Kubernetes cluster to control network access to workloads running on its node. By default, the kube-proxy uses iptables rules to do this, but there are alternatives like ipvs and ebpf.
+**pod** - a grouping of one or more related containers than run on a single node. I say "one or more" because you may have an application container along with a logging container that need to run together for the logs to be properly propagated. The operations team may choose to run both of these containers together in a Kubernetes pod definition.
+**kubectl** - the CLI utility for developers to interact with the Kubernetes API. The Kubernetes community is a little divided over whether to pronounce kubectl as "kube cuttle" or "kube control"
 
 Let's install Docker and Kubernetes on our cloud instance:
 
@@ -60,6 +63,7 @@ kubectl version --client
 minikube version
 ```
 
+We have all the tools installed to run workloads on Kubernetes. Let's get a simple test workload going.
 
-we need to start the kubernetes cluster
+
 
