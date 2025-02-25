@@ -86,11 +86,11 @@ const config = {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
-            label: 'Tutorial',
+            label: 'Workshop',
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+
           {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/trevorrobertsjr/jtc',
             label: 'GitHub',
             position: 'right',
           },
@@ -103,7 +103,7 @@ const config = {
             title: 'Docs',
             items: [
               {
-                label: 'Tutorial',
+                label: 'Workshop',
                 to: '/docs/intro',
               },
             ],
@@ -112,16 +112,8 @@ const config = {
             title: 'Community',
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-              },
-              {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
-              },
-              {
-                label: 'X',
-                href: 'https://x.com/docusaurus',
+                label: 'Slack',
+                href: 'https://justicethroughcode.slack.com/',
               },
             ],
           },
@@ -129,12 +121,8 @@ const config = {
             title: 'More',
             items: [
               {
-                label: 'Blog',
-                to: '/blog',
-              },
-              {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/trevorrobertsjr/jtc',
               },
             ],
           },

@@ -37,6 +37,8 @@ Multiple `COPY` commands: I do this to save time in building future versions of 
 
 `RUN` command uses the `--no-cache-dir` option with pip to save on file system space. The goal is to make the container image size as small as possible for ease of portability.
 
+`CMD` tells the Docker daemon what command to use to start the container.
+
 If you want to dive deeper on the topic of writing a Dockerfile, checkout this site: https://docs.docker.com/get-started/docker-concepts/building-images/writing-a-dockerfile/
 
 ## Building with the Blueprint
