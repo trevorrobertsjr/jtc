@@ -14,6 +14,4 @@ Here is a high-level diagram to depict this architecture
 
 The bridge may be a virtual private network (VPN), a dedicated network connection like AWS Direct Connect, or even mTLS in a Zero Trust configuration.
 
-In this lab, the Private Cloud will be our computers where we will run a python script to process data stored in the Public Cloud: An AWS S3 Bucket.
-
-
+In this lab, the Private Cloud will be our local computers where we will run a python script that contains our data pipeline to process data stored in the Public Cloud: An AWS S3 Bucket.

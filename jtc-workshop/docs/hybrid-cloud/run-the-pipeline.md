@@ -37,4 +37,6 @@ When I look at my bucket to verify, I should see my new files there:
 2025-02-24 09:12:32     157812 nyc_reviews.parquet
 ```
 
+Feel free to download the nyc_reviews.json file and compare its fields with the fields in the csv file.
+
 We have our working pipeline, and we want to share it with our co-workers. Let's take a look at a popular way to do this: Containers

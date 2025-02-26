@@ -2,11 +2,11 @@
 sidebar_position: 6
 ---
 
-# Create your Docker Container
+# Packaging Your Pipeline with Docker
 
 ## The Container Image Blueprint
 
-To create your container image, you need to write some instructions for the image builder in a file called `Dockerfile`.
+To create your container image, you need to write some instructions for the container image builder in a file called `Dockerfile`.
 
 Here is what our Dockerfile looks like for our script:
 ```Dockerfile
@@ -23,15 +23,15 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy any remaining files that are needed for the application.
-COPY . .
+COPY pipeline .
 
 # Run the script
 CMD ["python", "pipeline.py"]
 ```
 
-Dockerfiles are mostly self-explanatory, but I'll explain a few items to be aware of.
+Here are some Dockerfile items to be aware of.
 
-`FROM` tells us which container image will be used as the foundation for our container image. Always use trusted images from official sources. In a corporate setting, access to public images is usually blocked to prevent an attack vector. Some companies may also go as far as to work with a vendor (ex: [Chainguard](www.chainguard.dev)) that specializes in providing hardened minimal containers to use with the `FROM` keyword
+`FROM` tells us which container image will be used as the foundation for our container image. Always use trusted images from official sources. In a corporate setting, access to public images is usually blocked to prevent an attack vector. Some companies may also go as far as to work with a vendor (ex: [Chainguard](https://www.chainguard.dev)) that specializes in providing hardened minimal containers to use with the `FROM` keyword
 
 Multiple `COPY` commands: I do this to save time in building future versions of our container image. Each command in a Dockerfile roughly represents a layer that the image builder creates. If I have a single copy command (i.e. `COPY pipeline.py requirements.txt ./`), then every time I make a source code change, I need to re-run that entire layer including the pip package installation process.
 
@@ -39,7 +39,7 @@ Multiple `COPY` commands: I do this to save time in building future versions of 
 
 `CMD` tells the Docker daemon what command to use to start the container.
 
-If you want to dive deeper on the topic of writing a Dockerfile, checkout this site: https://docs.docker.com/get-started/docker-concepts/building-images/writing-a-dockerfile/
+If you want to dive deeper on the topic of writing a Dockerfile, check this site out: https://docs.docker.com/get-started/docker-concepts/building-images/writing-a-dockerfile/
 
 ## Building with the Blueprint
 
@@ -50,12 +50,13 @@ The syntax is:
 ```bash
 docker build -t dockerhub-username/pipeline .
 ```
-
+:::tip
 For those of you with Macs that have the Apple CPU, you will need to use a special syntax to build an Intel-compatible image:
 
 ```bash
 docker buildx build --platform linux/amd64 -t dockerhub-username/pipeline .
 ```
+:::
 
 You will see output similar to the following:
 ```bash
@@ -85,7 +86,11 @@ You will see output similar to the following:
  => => writing image sha256:4d3b401bb4e0f2fa0e688c6a2063c61b1da618ed42a237  0.0s
  => => naming to docker.io/dockerhub-username/pipeline                         0.0s
 ```
-For our image to be easily accessible by others on your team, you need to store it in a repository, similar to GitHub, that is called a container registry. In our lab, we are using Docker Hub, the default registry that Docker uses as the source and destination of container images.
+For our image to be easily accessible by others on your team, you need to store in a location that others can access. With containers, this location is called a container registry.
+
+You can think of it as being somewhat similar to GitHub, and you can store multiple versions of your image.
+
+In our lab, we are using Docker Hub, the default registry that Docker uses as the source and destination of container images.
 
 We use the following command to push our image:
 ```bash
@@ -110,4 +115,3 @@ c3844976239d: Layer already exists
 Similar to Git, Docker is intelligent enough to push only the changes you have made since the last push to save on bandwidth consumption and to speed up operations.
 
 Now, that we have designed and built our container image, let's run our container!.
-

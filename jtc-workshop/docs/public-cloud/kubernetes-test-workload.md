@@ -1,28 +1,75 @@
 ---
-sidebar_position: 4
+sidebar_position: 4.5
 ---
 
-# Kubernetes Workloads
+# Kubernetes Hello World
 
-Let's verify that 
+Here is a sample Kubernetes manifest that deploys a web server for us:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
 
-Deploy an nginx web server and a busybox pod for network troubleshooting
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
+```
+
+Let's create a file called `test-app.yaml`, save this content to it, and then run the following command.
+
+```bash
+kubectl apply -f test-app.yaml
+```
+
+Let's see check on our Kubernetes pod
 
 ```bash
 kubectl get pods
 ```
-```bash
+
+```bash title="Sample Output"
 NAME                              READY   STATUS    RESTARTS   AGE
 nginx-deployment-96b9d695-ssw4m   1/1     Running   0          7s
 ```
 
 Copy your pod name to another window. We will be using it for the next few commands...
 
+Let's use the `describe` command to see interesting info about our pod.
+
 ```bash
 kubectl describe pod your-pod-name-here
 ```
 
-```bash
+```bash title="Sample Output"
 Name:             nginx-deployment-96b9d695-ssw4m
 Namespace:        default
 Priority:         0
@@ -78,11 +125,14 @@ Events:
   Normal  Created    43s   kubelet            Created container: nginx
   Normal  Started    42s   kubelet            Started container nginx
 ```
+
+Finally, let's check our pod's logs to verify there are no errors/issues
+
 ```bash
 kubectl logs your-pod-name
 ```
 
-```bash
+```bash title="Sample Output"
 /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
 /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
 /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
@@ -106,7 +156,9 @@ Let's try accessing our web server
 ```bash
 kubectl port-forward svc/nginx-service 8080:80 &
 ```
-```bash
+You should see output similar to the following:
+
+```bash title="Sample Output"
 Forwarding from 127.0.0.1:8080 -> 80
 Forwarding from [::1]:8080 -> 80
 ```
@@ -115,7 +167,7 @@ Forwarding from [::1]:8080 -> 80
 curl localhost:8080
 ```
 
-```bash
+```bash title="Sample Output"
 Handling connection for 8080
 <!DOCTYPE html>
 <html>

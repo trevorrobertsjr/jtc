@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/lambda"
@@ -11,45 +13,69 @@ import (
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
-		// Create S3 bucket
+		// Create S3 bucket with website hosting enabled
 		s3Bucket, err := s3.NewBucket(ctx, "websiteBucket", &s3.BucketArgs{
 			Bucket: pulumi.String("jtc-wanfooru-com"),
 			Website: &s3.BucketWebsiteArgs{
 				IndexDocument: pulumi.String("index.html"),
+				ErrorDocument: pulumi.String("error.html"),
 			},
 		})
 		if err != nil {
 			return err
 		}
 
-		// Create CloudFront Origin Access Control (OAC)
-		oac, err := cloudfront.NewOriginAccessControl(ctx, "oac", &cloudfront.OriginAccessControlArgs{
-			Name:                          pulumi.String("JTC-OAC"),
-			Description:                   pulumi.String("Access control for S3 website"),
-			OriginAccessControlOriginType: pulumi.String("s3"),
-			SigningBehavior:               pulumi.String("always"),
-			SigningProtocol:               pulumi.String("sigv4"),
+		// Enable public access for S3 website endpoint
+		_, err = s3.NewBucketPublicAccessBlock(ctx, "publicAccessBlock", &s3.BucketPublicAccessBlockArgs{
+			Bucket:                s3Bucket.ID(),
+			BlockPublicAcls:       pulumi.Bool(false),
+			BlockPublicPolicy:     pulumi.Bool(false),
+			IgnorePublicAcls:      pulumi.Bool(false),
+			RestrictPublicBuckets: pulumi.Bool(false),
 		})
 		if err != nil {
 			return err
 		}
 
-		// Create CloudFront Distribution
+		// S3 Bucket Policy to allow public access for the S3 website
+		_, err = s3.NewBucketPolicy(ctx, "bucketPolicy", &s3.BucketPolicyArgs{
+			Bucket: s3Bucket.ID(),
+			Policy: pulumi.String(fmt.Sprintf(`{
+				"Version": "2012-10-17",
+				"Statement": [
+					{
+						"Effect": "Allow",
+						"Principal": "*",
+						"Action": "s3:GetObject",
+						"Resource": "arn:aws:s3:::%s/*"
+					}
+				]
+			}`, "jtc-wanfooru-com")),
+		})
+		if err != nil {
+			return err
+		}
+
+		// CloudFront Distribution pointing to S3 website endpoint
 		cf, err := cloudfront.NewDistribution(ctx, "websiteDistribution", &cloudfront.DistributionArgs{
 			Enabled:           pulumi.Bool(true),
 			DefaultRootObject: pulumi.String("index.html"),
 			Origins: cloudfront.DistributionOriginArray{
 				&cloudfront.DistributionOriginArgs{
-					DomainName:            s3Bucket.BucketRegionalDomainName,
-					OriginId:              pulumi.String("S3Origin"),
-					OriginAccessControlId: oac.ID(),
-					S3OriginConfig: &cloudfront.DistributionOriginS3OriginConfigArgs{
-						OriginAccessIdentity: pulumi.String(""),
+					DomainName: s3Bucket.WebsiteEndpoint,
+					OriginId:   pulumi.String("S3WebsiteOrigin"),
+					CustomOriginConfig: &cloudfront.DistributionOriginCustomOriginConfigArgs{
+						OriginProtocolPolicy: pulumi.String("http-only"), // S3 website only supports HTTP
+						HttpPort:             pulumi.Int(80),
+						HttpsPort:            pulumi.Int(443),
+						OriginSslProtocols: pulumi.StringArray{
+							pulumi.String("TLSv1.2"),
+						},
 					},
 				},
 			},
 			DefaultCacheBehavior: &cloudfront.DistributionDefaultCacheBehaviorArgs{
-				TargetOriginId:       pulumi.String("S3Origin"),
+				TargetOriginId:       pulumi.String("S3WebsiteOrigin"),
 				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
 				AllowedMethods: pulumi.StringArray{
 					pulumi.String("GET"),
@@ -83,7 +109,7 @@ func main() {
 			return err
 		}
 
-		// Create Lambda function
+		// Preserve the existing Lambda function
 		lambdaRole, err := iam.NewRole(ctx, "lambdaRole", &iam.RoleArgs{
 			AssumeRolePolicy: pulumi.String(`{
 				"Version": "2012-10-17",
@@ -98,7 +124,6 @@ func main() {
 			return err
 		}
 
-		// Attach AWSLambdaBasicExecutionRole policy
 		_, err = iam.NewRolePolicyAttachment(ctx, "lambdaBasicExecutionAttachment", &iam.RolePolicyAttachmentArgs{
 			Role:      lambdaRole.Name,
 			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
@@ -124,7 +149,7 @@ func main() {
 			return err
 		}
 
-		// Create Route 53 Record to point to CloudFront
+		// Keep Route 53 pointing to CloudFront
 		_, err = route53.NewRecord(ctx, "websiteRecord", &route53.RecordArgs{
 			ZoneId: pulumi.String("Z01322833I96GV0X0FMD7"),
 			Name:   pulumi.String("jtc.wanfooru.com"),
@@ -141,10 +166,13 @@ func main() {
 			return err
 		}
 
+		// Export all values (preserving everything)
+		ctx.Export("S3WebsiteURL", pulumi.Sprintf("http://%s.s3-website-us-east-1.amazonaws.com", "jtc-wanfooru-com"))
 		ctx.Export("CloudFrontDomain", cf.DomainName)
 		ctx.Export("S3BucketName", s3Bucket.Bucket)
 		ctx.Export("LambdaFunction", lambdaFunc.Arn)
 		ctx.Export("CloudFrontDistributionID", cf.ID())
+
 		return nil
 	})
 }

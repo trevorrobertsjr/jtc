@@ -1,14 +1,18 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# Kubernetes Primer
-
-## Installing Kubernetes on Our Instance
+# Installing Kubernetes on Our Instance
 
 Make sure you are SSH'ed in to your Amazon EC2 instance
 
 Let's prepare our instance to use GPG keys to verify the integrity of the packages we will install:
+
+:::tip
+
+During class, we observed that some of these commands need to be run one line at a time. Don't just copy the entire grouping of commands and paste them and expect them to run successfully.
+
+:::
 
 ```bash
 # Update APT and install dependencies

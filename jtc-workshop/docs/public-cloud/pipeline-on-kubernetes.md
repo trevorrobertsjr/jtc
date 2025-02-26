@@ -91,7 +91,4 @@ kubectl logs your-pod-name
 
 You may be thinking, "that was an awful lot of setup just to get a workload running," and you would be right!
 
-In industry, it is not a recommended practice to do this much manual configuration of a server that will be deployed into production. Let's see how Infrastructure as Code (IaC) can simplify our lives by deploying cloud resources for us in a repeatable manner.
-
-
-
+In industry, it is not a recommended practice to do this much manual deployment and configuration of a server that will be deployed into production. Let's see how Infrastructure as Code (IaC) can simplify our lives by deploying cloud resources for us in a repeatable manner.
