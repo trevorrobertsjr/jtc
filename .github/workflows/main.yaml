@@ -1,0 +1,58 @@
+name: Deploy JTC Workshop to S3 and Invalidate the CloudFront Cache
+
+# on:
+#   push:
+#     branches:
+#       - main  # Adjust as needed
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read   # Read repository contents
+
+env:
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}  # Replace with your IAM Role ARN
+  AWS_REGION: "us-east-1"  # Replace with your AWS region
+  S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}  # Replace with your S3 bucket name
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}  # Replace if using CloudFront
+  LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}  # Replace with your Lambda function name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Node.js and dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docusaurus site
+        run: npm run build
+
+      - name: Sync build artifacts to S3
+        run: aws s3 sync build s3://${{ env.S3_BUCKET_NAME }}/ --delete
+
+      - name: Invalidate CloudFront cache (optional)
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        continue-on-error: true
+
+      # - name: Invoke Lambda function
+      #   run: aws lambda invoke --function-name ${{ env.LAMBDA_FUNCTION_NAME }} /dev/null
