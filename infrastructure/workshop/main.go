@@ -217,6 +217,11 @@ func main() {
 							"Effect": "Allow",
 							"Action": ["cloudfront:CreateInvalidation"],
 							"Resource": "arn:aws:cloudfront::*:distribution/%s"
+						},
+						{
+							"Effect": "Allow",
+							"Action": "sts:AssumeRoleWithWebIdentity",
+							"Resource": "*"
 						}
 					]
 				}`, bucketName, bucketName, awsRegion, lambdaFunctionName, string(cfID)), nil
