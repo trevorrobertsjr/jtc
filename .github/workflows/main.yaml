@@ -13,10 +13,10 @@ permissions:
   contents: read   # Read repository contents
 
 env:
-  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}  # Replace with your IAM Role ARN
+  AWS_ROLE_ARN: "arn:aws:iam::318168271290:role/githubActionsRole-3f62387"  # Replace with your IAM Role ARN
   AWS_REGION: "us-east-1"  # Replace with your AWS region
-  S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}  # Replace with your S3 bucket name
-  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}  # Replace if using CloudFront
+  S3_BUCKET_NAME: "jtc-wanfooru-com"  # Replace with your S3 bucket name
+  CLOUDFRONT_DISTRIBUTION_ID: "EXO773LTLZ9H0"  # Replace if using CloudFront
   LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}  # Replace with your Lambda function name
 
 jobs:
