@@ -1,2 +1,5 @@
 config:
   aws:region: us-east-1
+  workshop:bucketName: jtc-wanfooru-com
+  workshop:hostedZoneId: Z01322833I96GV0X0FMD7
+  workshop:acmCertificate: arn:aws:acm:us-east-1:318168271290:certificate/e6a5a02b-9537-4111-8753-9ca709d7b480

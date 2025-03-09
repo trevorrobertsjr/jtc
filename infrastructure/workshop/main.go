@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/cloudfront"
@@ -9,13 +10,26 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/route53"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
-		// Create S3 bucket with website hosting enabled
+		// Load configuration variables
+		conf := config.New(ctx, "")
+		bucketName := conf.Require("bucketName")         // Pulumi config for S3 bucket name
+		hostedZoneId := conf.Require("hostedZoneId")     // Pulumi config for Route 53 Hosted Zone ID
+		acmCertificate := conf.Require("acmCertificate") // Pulumi config for ACM Certificate
+
+		// Define constants
+		githubRepo := "trevorrobertsjr/jtc"
+		awsRegion := "us-east-1"
+		lambdaFunctionName := "invalidateCacheLambda"
+		siteName := "jtc.wanfooru.com"
+
+		// Create S3 bucket for website hosting
 		s3Bucket, err := s3.NewBucket(ctx, "websiteBucket", &s3.BucketArgs{
-			Bucket: pulumi.String("jtc-wanfooru-com"),
+			Bucket: pulumi.String(bucketName),
 			Website: &s3.BucketWebsiteArgs{
 				IndexDocument: pulumi.String("index.html"),
 				ErrorDocument: pulumi.String("error.html"),
@@ -50,13 +64,13 @@ func main() {
 						"Resource": "arn:aws:s3:::%s/*"
 					}
 				]
-			}`, "jtc-wanfooru-com")),
+			}`, bucketName)),
 		})
 		if err != nil {
 			return err
 		}
 
-		// CloudFront Distribution pointing to S3 website endpoint
+		// CloudFront Distribution for S3 website
 		cf, err := cloudfront.NewDistribution(ctx, "websiteDistribution", &cloudfront.DistributionArgs{
 			Enabled:           pulumi.Bool(true),
 			DefaultRootObject: pulumi.String("index.html"),
@@ -65,7 +79,7 @@ func main() {
 					DomainName: s3Bucket.WebsiteEndpoint,
 					OriginId:   pulumi.String("S3WebsiteOrigin"),
 					CustomOriginConfig: &cloudfront.DistributionOriginCustomOriginConfigArgs{
-						OriginProtocolPolicy: pulumi.String("http-only"), // S3 website only supports HTTP
+						OriginProtocolPolicy: pulumi.String("http-only"),
 						HttpPort:             pulumi.Int(80),
 						HttpsPort:            pulumi.Int(443),
 						OriginSslProtocols: pulumi.StringArray{
@@ -96,7 +110,7 @@ func main() {
 				pulumi.String("jtc.wanfooru.com"),
 			},
 			ViewerCertificate: &cloudfront.DistributionViewerCertificateArgs{
-				AcmCertificateArn: pulumi.String("arn:aws:acm:us-east-1:318168271290:certificate/e6a5a02b-9537-4111-8753-9ca709d7b480"),
+				AcmCertificateArn: pulumi.String(acmCertificate),
 				SslSupportMethod:  pulumi.String("sni-only"),
 			},
 			Restrictions: &cloudfront.DistributionRestrictionsArgs{
@@ -109,14 +123,14 @@ func main() {
 			return err
 		}
 
-		// Preserve the existing Lambda function
+		// Lambda Role
 		lambdaRole, err := iam.NewRole(ctx, "lambdaRole", &iam.RoleArgs{
 			AssumeRolePolicy: pulumi.String(`{
 				"Version": "2012-10-17",
 				"Statement": [{
-					"Action": "sts:AssumeRole",
+					"Effect": "Allow",
 					"Principal": { "Service": "lambda.amazonaws.com" },
-					"Effect": "Allow"
+					"Action": "sts:AssumeRole"
 				}]
 			}`),
 		})
@@ -132,6 +146,7 @@ func main() {
 			return err
 		}
 
+		// Lambda function
 		lambdaFunc, err := lambda.NewFunction(ctx, "invalidateCacheLambda", &lambda.FunctionArgs{
 			Runtime: pulumi.String("python3.12"),
 			Handler: pulumi.String("index.handler"),
@@ -149,10 +164,73 @@ func main() {
 			return err
 		}
 
-		// Keep Route 53 pointing to CloudFront
+		// GitHub OIDC IAM Role for GitHub Actions
+		trustPolicy, err := json.Marshal(map[string]interface{}{
+			"Version": "2012-10-17",
+			"Statement": []map[string]interface{}{
+				{
+					"Effect": "Allow",
+					"Principal": map[string]string{
+						"Federated": "arn:aws:iam::aws:oidc-provider/token.actions.githubusercontent.com",
+					},
+					"Action": "sts:AssumeRoleWithWebIdentity",
+					"Condition": map[string]interface{}{
+						"StringEquals": map[string]string{
+							"token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+						},
+						"StringLike": map[string]string{
+							"token.actions.githubusercontent.com:sub": "repo:" + githubRepo + ":ref:refs/heads/main",
+						},
+					},
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		iamRole, err := iam.NewRole(ctx, "githubActionsRole", &iam.RoleArgs{
+			AssumeRolePolicy: pulumi.String(trustPolicy),
+		})
+		if err != nil {
+			return err
+		}
+
+		// Attach IAM Policy using NewRolePolicy and ApplyT()
+		_, err = iam.NewRolePolicy(ctx, "githubActionsPolicy", &iam.RolePolicyArgs{
+			Role: iamRole.Name,
+			Policy: cf.ID().ApplyT(func(cfID pulumi.ID) (string, error) {
+				return fmt.Sprintf(`{
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Action": ["s3:PutObject", "s3:ListBucket"],
+							"Resource": ["arn:aws:s3:::%s", "arn:aws:s3:::%s/*"]
+						},
+						{
+							"Effect": "Allow",
+							"Action": ["lambda:InvokeFunction"],
+							"Resource": "arn:aws:lambda:%s:*:function:%s"
+						},
+						{
+							"Effect": "Allow",
+							"Action": ["cloudfront:CreateInvalidation"],
+							"Resource": "arn:aws:cloudfront::*:distribution/%s"
+						}
+					]
+				}`, bucketName, bucketName, awsRegion, lambdaFunctionName, string(cfID)), nil
+			}).(pulumi.StringOutput),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Route 53 Record
 		_, err = route53.NewRecord(ctx, "websiteRecord", &route53.RecordArgs{
-			ZoneId: pulumi.String("Z01322833I96GV0X0FMD7"),
-			Name:   pulumi.String("jtc.wanfooru.com"),
+			ZoneId: pulumi.String(hostedZoneId), // Using Pulumi config for Hosted Zone ID
+			Name:   pulumi.String(siteName),
 			Type:   pulumi.String("A"),
 			Aliases: route53.RecordAliasArray{
 				&route53.RecordAliasArgs{
@@ -166,12 +244,13 @@ func main() {
 			return err
 		}
 
-		// Export all values (preserving everything)
-		ctx.Export("S3WebsiteURL", pulumi.Sprintf("http://%s.s3-website-us-east-1.amazonaws.com", "jtc-wanfooru-com"))
+		// Export values
+		ctx.Export("S3WebsiteURL", pulumi.Sprintf("http://%s.s3-website-%s.amazonaws.com", bucketName, awsRegion))
 		ctx.Export("CloudFrontDomain", cf.DomainName)
 		ctx.Export("S3BucketName", s3Bucket.Bucket)
 		ctx.Export("LambdaFunction", lambdaFunc.Arn)
 		ctx.Export("CloudFrontDistributionID", cf.ID())
+		ctx.Export("GitHubActionsRoleARN", iamRole.Arn)
 
 		return nil
 	})
