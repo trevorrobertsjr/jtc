@@ -41,12 +41,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: jtc-workshop
 
       - name: Build Docusaurus site
         run: npm run build
+        working-directory: jtc-workshop
 
       - name: Sync build artifacts to S3
-        run: aws s3 sync build s3://${{ env.S3_BUCKET_NAME }}/ --delete
+        run: aws s3 sync jtc-workshop/build s3://${{ env.S3_BUCKET_NAME }}/ --delete
 
       - name: Invalidate CloudFront cache (optional)
         if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
