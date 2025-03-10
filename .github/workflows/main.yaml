@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-        working-directory: jtc-workshop
+          cache-dependency-path: jtc-workshop/package-lock.json
 
       - name: Install dependencies
         run: npm ci
