@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/lambda"
@@ -15,6 +16,13 @@ import (
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
+		// Retrieve AWS Account ID
+		callerIdentity, err := aws.GetCallerIdentity(ctx, nil)
+		if err != nil {
+			return err
+		}
+
+		awsAccountID := callerIdentity.AccountId
 		// Load configuration variables
 		conf := config.New(ctx, "")
 		bucketName := conf.Require("bucketName")         // Pulumi config for S3 bucket name
@@ -107,7 +115,7 @@ func main() {
 				},
 			},
 			Aliases: pulumi.StringArray{
-				pulumi.String("jtc.wanfooru.com"),
+				pulumi.String(siteName),
 			},
 			ViewerCertificate: &cloudfront.DistributionViewerCertificateArgs{
 				AcmCertificateArn: pulumi.String(acmCertificate),
@@ -171,7 +179,7 @@ func main() {
 				{
 					"Effect": "Allow",
 					"Principal": map[string]string{
-						"Federated": "arn:aws:iam::318168271290:oidc-provider/token.actions.githubusercontent.com",
+						"Federated": "arn:aws:iam::" + awsAccountID + ":oidc-provider/token.actions.githubusercontent.com",
 					},
 					"Action": "sts:AssumeRoleWithWebIdentity",
 					"Condition": map[string]interface{}{
@@ -203,7 +211,7 @@ func main() {
 					"Statement": [
 						{
 							"Effect": "Allow",
-							"Action": ["s3:PutObject", "s3:ListBucket"],
+							"Action": ["s3:PutObject", "s3:ListBucket", "s3:DeleteObject", "s3:GetObject"],
 							"Resource": ["arn:aws:s3:::%s", "arn:aws:s3:::%s/*"]
 						},
 						{
