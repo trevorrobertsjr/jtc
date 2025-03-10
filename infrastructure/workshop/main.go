@@ -171,14 +171,12 @@ func main() {
 				{
 					"Effect": "Allow",
 					"Principal": map[string]string{
-						"Federated": "arn:aws:iam::aws:oidc-provider/token.actions.githubusercontent.com",
+						"Federated": "arn:aws:iam::318168271290:oidc-provider/token.actions.githubusercontent.com",
 					},
 					"Action": "sts:AssumeRoleWithWebIdentity",
 					"Condition": map[string]interface{}{
 						"StringEquals": map[string]string{
 							"token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-						},
-						"StringLike": map[string]string{
 							"token.actions.githubusercontent.com:sub": "repo:" + githubRepo + ":ref:refs/heads/main",
 						},
 					},
