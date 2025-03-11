@@ -7,7 +7,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
-	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/lambda"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/route53"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -131,47 +130,6 @@ func main() {
 			return err
 		}
 
-		// Lambda Role
-		lambdaRole, err := iam.NewRole(ctx, "lambdaRole", &iam.RoleArgs{
-			AssumeRolePolicy: pulumi.String(`{
-				"Version": "2012-10-17",
-				"Statement": [{
-					"Effect": "Allow",
-					"Principal": { "Service": "lambda.amazonaws.com" },
-					"Action": "sts:AssumeRole"
-				}]
-			}`),
-		})
-		if err != nil {
-			return err
-		}
-
-		_, err = iam.NewRolePolicyAttachment(ctx, "lambdaBasicExecutionAttachment", &iam.RolePolicyAttachmentArgs{
-			Role:      lambdaRole.Name,
-			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
-		})
-		if err != nil {
-			return err
-		}
-
-		// Lambda function
-		lambdaFunc, err := lambda.NewFunction(ctx, "invalidateCacheLambda", &lambda.FunctionArgs{
-			Runtime: pulumi.String("python3.12"),
-			Handler: pulumi.String("index.handler"),
-			Role:    lambdaRole.Arn,
-			Code: pulumi.NewAssetArchive(map[string]interface{}{
-				"folder": pulumi.NewFileArchive("./lambda"),
-			}),
-			Environment: &lambda.FunctionEnvironmentArgs{
-				Variables: pulumi.StringMap{
-					"DISTRIBUTION_ID": cf.ID(),
-				},
-			},
-		})
-		if err != nil {
-			return err
-		}
-
 		// GitHub OIDC IAM Role for GitHub Actions
 		trustPolicy, err := json.Marshal(map[string]interface{}{
 			"Version": "2012-10-17",
@@ -259,7 +217,6 @@ func main() {
 		ctx.Export("S3WebsiteURL", pulumi.Sprintf("http://%s.s3-website-%s.amazonaws.com", bucketName, awsRegion))
 		ctx.Export("CloudFrontDomain", cf.DomainName)
 		ctx.Export("S3BucketName", s3Bucket.Bucket)
-		ctx.Export("LambdaFunction", lambdaFunc.Arn)
 		ctx.Export("CloudFrontDistributionID", cf.ID())
 		ctx.Export("GitHubActionsRoleARN", iamRole.Arn)
 
