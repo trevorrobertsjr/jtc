@@ -3,8 +3,11 @@ name: Deploy JTC Workshop to S3 and Invalidate the CloudFront Cache
 on:
   push:
     branches:
-      - main  # Adjust as needed
+      - main
+    paths:
+      - 'jtc-workshop/**' # Only trigger when workshop content changes
 
+# # Debug
 # on:
 #   workflow_dispatch:
 
