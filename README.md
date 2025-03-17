@@ -8,4 +8,4 @@ The workshop can be run locally on your machine if there are any problems with t
 
 Follow the instructions in the jtc-workshop/README.md file to learn how to run the workshop site locally.
 
-Message me on Slack if you have any questions. Thanks!
+Message me on Slack or on [BlueSky](https://bsky.app/profile/trevorrobertsjr.bsky.social) if you have any questions. Thanks!
