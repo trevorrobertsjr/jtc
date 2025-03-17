@@ -1,12 +1,12 @@
 name: Deploy JTC Workshop to S3 and Invalidate the CloudFront Cache
 
-# on:
-#   push:
-#     branches:
-#       - main  # Adjust as needed
-
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main  # Adjust as needed
+
+# on:
+#   workflow_dispatch:
 
 permissions:
   id-token: write  # Required for OIDC authentication
@@ -25,12 +25,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Debug OIDC Token Claims
-        run: |
-          echo "Fetching OIDC Token..."
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
-          echo $TOKEN | cut -d "." -f2 | base64 -d | jq .
 
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
